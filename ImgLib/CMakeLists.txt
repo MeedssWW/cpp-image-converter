@@ -1,36 +1,39 @@
-cmake_minimum_required(VERSION 3.11)
+cmake_minimum_required(VERSION 3.16)
 
-project(ImgLib CXX)
+project(ImgLib LANGUAGES CXX)
+
 set(CMAKE_CXX_STANDARD 17)
-
-# добавляем новую переменную - путь к LibJPEG
-set(LIBJPEG_DIR CACHE STRING "LibJPEG static library directory")
-if(NOT LIBJPEG_DIR)
-    message(FATAL_ERROR "Please, specify LibJPEG directory via -DLIBJPEG_DIR=<dir>")
-endif()
-message(STATUS "LibJPEG dir is ${LIBJPEG_DIR}, change via -DLIBJPEG_DIR=<dir>")
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(IMGLIB_MAIN_FILES img_lib.h img_lib.cpp)
 
-# к файлам форматов добавим JPEG и BMP
-set(IMGLIB_FORMAT_FILES 
-    ppm_image.h ppm_image.cpp 
+set(IMGLIB_FORMAT_FILES
+    ppm_image.h ppm_image.cpp
     jpeg_image.h jpeg_image.cpp
-    bmp_image.h bmp_image.cpp)
+    bmp_image.h bmp_image.cpp
+)
 
-add_library(ImgLib STATIC ${IMGLIB_MAIN_FILES} 
-            ${IMGLIB_FORMAT_FILES})
+add_library(ImgLib STATIC
+    ${IMGLIB_MAIN_FILES}
+    ${IMGLIB_FORMAT_FILES}
+)
 
-# Include-директории теперь включают LibJPEG
-target_include_directories(ImgLib PUBLIC "${LIBJPEG_DIR}/include")
+target_include_directories(ImgLib PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 
-# Флаг INTERFACE обозначает видимость параметра - только для зависимых целей.
-# Для самой ImgLib не нужно указывать зависимости компоновки, поскольку
-# статическая библиотека не компонуется, а просто архивируется
-target_link_directories(ImgLib INTERFACE
-    "${LIBJPEG_DIR}/lib/$<IF:$<CONFIG:Debug>,Debug,Release>"
+if(LIBJPEG_DIR)
+    message(STATUS "Using LibJPEG from ${LIBJPEG_DIR}")
+    target_include_directories(ImgLib PUBLIC "${LIBJPEG_DIR}/include")
+    target_link_directories(ImgLib PUBLIC
+        "${LIBJPEG_DIR}/lib/$<IF:$<CONFIG:Debug>,Debug,Release>"
     )
+    target_link_libraries(ImgLib PUBLIC jpeg)
+else()
+    find_package(JPEG REQUIRED)
+    target_link_libraries(ImgLib PUBLIC JPEG::JPEG)
+endif()
 
-# В качестве зависимости указано jpeg. Компоновщик будет искать
-# файл libjpeg.a
-target_link_libraries(ImgLib INTERFACE jpeg)
+target_compile_options(ImgLib PRIVATE
+    $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
+    $<$<CXX_COMPILER_ID:MSVC>:/W4>
+)
