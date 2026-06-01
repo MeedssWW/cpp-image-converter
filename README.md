@@ -2,6 +2,7 @@
 
 [![C++ CI](https://github.com/MeedssWW/cpp-image-converter/actions/workflows/cpp-ci.yml/badge.svg)](https://github.com/MeedssWW/cpp-image-converter/actions/workflows/cpp-ci.yml)
 
+
 Image Converter is a command-line tool for converting images between supported formats. The project contains a small image library and a CLI application that detects formats by file extension, loads the input image, and saves it in the requested output format.
 
 ## Supported Formats
